@@ -86,10 +86,10 @@ function goToNewsList() {
 					    <c:forEach begin="1" end="${page.pages}" var="pageNo">
 					    <c:choose>
 					    <c:when test="${pageNo==page.pageNum}">
-					    <a href="${ctx}/index/news?pageNum=${pageNo}" style="background: #C30D23 none repeat scroll 0% 0%;color:#ffffff;">${pageNo}</a>
+					    <a href="${ctx}/index/notice?pageNum=${pageNo}" style="background: #C30D23 none repeat scroll 0% 0%;color:#ffffff;">${pageNo}</a>
 					     </c:when>
 					   <c:otherwise>
-					   <a href="${ctx}/index/news?pageNum=${pageNo}" >${pageNo}</a>
+					   <a href="${ctx}/index/notice?pageNum=${pageNo}" >${pageNo}</a>
 					   </c:otherwise>
 					   </c:choose>
 						

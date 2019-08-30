@@ -1,7 +1,5 @@
 package com.xiupeilian.carpart.session;
 
-import com.xiupeilian.carpart.model.Menu;
-import com.xiupeilian.carpart.model.SysUser;
 import com.xiupeilian.carpart.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -9,8 +7,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import java.util.List;
 
 public class SessionInterceptor implements HandlerInterceptor {
 
@@ -20,8 +16,8 @@ public class SessionInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         //获取请求的URL
-        String path=request.getRequestURI();
-        if (path.contains("login")){
+     /*   String path=request.getRequestURI();
+        if (path.contains("login")||path.contains("upLoad")){
             return true;
         }else {
             //获取session
@@ -62,7 +58,8 @@ public class SessionInterceptor implements HandlerInterceptor {
 
             }
 
-        }
+        }*/
+     return  true;
     }
 
     @Override

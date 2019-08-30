@@ -1,22 +1,39 @@
 package com.xiupeilian.carpart.controller;
 
-
+import com.aliyuncs.CommonRequest;
+import com.aliyuncs.CommonResponse;
+import com.aliyuncs.DefaultAcsClient;
+import com.aliyuncs.IAcsClient;
+import com.aliyuncs.exceptions.ClientException;
+import com.aliyuncs.exceptions.ServerException;
+import com.aliyuncs.http.MethodType;
+import com.aliyuncs.profile.DefaultProfile;
 import com.xiupeilian.carpart.constant.SysConstant;
-import com.xiupeilian.carpart.model.SysUser;
+import com.xiupeilian.carpart.model.*;
+import com.xiupeilian.carpart.service.BrandService;
+import com.xiupeilian.carpart.service.CityService;
 import com.xiupeilian.carpart.service.UserService;
 import com.xiupeilian.carpart.task.MailTask;
 import com.xiupeilian.carpart.util.SHA1Util;
 import com.xiupeilian.carpart.vo.LoginVo;
+import com.xiupeilian.carpart.vo.RegisterVo;
+import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.authc.UsernamePasswordToken;
+import org.apache.shiro.subject.Subject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.List;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 @Controller
 @RequestMapping("/login")
@@ -28,6 +45,12 @@ public class LoginController {
     private JavaMailSenderImpl mailSender;
     @Autowired
     private ThreadPoolTaskExecutor executor;
+    @Autowired
+    private BrandService brandService;
+    @Autowired
+    private CityService cityService;
+    @Autowired
+    private RedisTemplate jedis;
 
     @RequestMapping("toLogin")
     public String toLogin(){
@@ -41,17 +64,21 @@ public class LoginController {
         String code=(String) request.getSession().getAttribute(SysConstant.VALIDATE_CODE);
         if (vo.getValidate().toUpperCase().equals(code.toUpperCase())){
             //验证码正确
-            vo.setPassword(SHA1Util.encode(vo.getPassword()));
-            SysUser user=userService.findUserByLoginNameAndPassword(vo);
-            if (null==user){
-                //未登录成功
-                response.getWriter().write("2");
-            }else {
-                //登录成功
-                request.getSession().setAttribute("user",user);
+            Subject subject= SecurityUtils.getSubject();
+            UsernamePasswordToken token=new UsernamePasswordToken(vo.getLoginName(),vo.getPassword());
 
-                response.getWriter().write("3");
+            try {
+                subject.login(token);
+            }catch (Exception e){
+                //用户名密码错误
+                response.getWriter().write(e.getMessage());
+                return;
             }
+            //获取存入的用户信息
+            SysUser user=(SysUser) SecurityUtils.getSubject().getPrincipal();
+            //存入spring-session
+            request.getSession().setAttribute("user",user);
+            response.getWriter().write("3");
 
         }else {
             //验证码错误
@@ -112,6 +139,152 @@ public class LoginController {
 
         }
 
+    }
+    /**
+     * 跳转注册页面 展示品牌种类，配件种类，精品种类
+     * */
+
+    @RequestMapping("/toRegister")
+    public String register(HttpServletRequest request){
+        List<Brand> brandList=brandService.findBrandsAll();
+        List<Parts> partsList=brandService.findPartsAll();
+        List<Prime> primeList=brandService.findPrimesAll();
+
+        request.setAttribute("brandList",brandList);
+        request.setAttribute("partsList",partsList);
+        request.setAttribute("primeList",primeList);
+        return "login/register";
+    }
+
+    /**
+     * 验证登录账号
+     * */
+    @RequestMapping("/checkLoginName")
+    public void checkLoginName(String loginName,HttpServletResponse response)throws  Exception{
+
+        SysUser user=userService.findUserByLoginName(loginName);
+        if (null==user){
+            response.getWriter().write("1");
+        }else {
+            response.getWriter().write("2");
+        }
+    }
+
+    /**
+     * 验证手机号
+     * */
+    @RequestMapping("/checkPhone")
+    public void checkPhone(String telnum,HttpServletResponse response)throws  Exception{
+
+        SysUser user=userService.findUserByPhone(telnum);
+        if (null==user){
+            response.getWriter().write("1");
+        }else {
+            response.getWriter().write("2");
+        }
+    }
+
+    /**
+     * 验证邮箱
+     * */
+    @RequestMapping("/checkEmail")
+    public void checkEmail(String email,HttpServletResponse response)throws  Exception{
+
+        SysUser user=userService.findUserByEmail(email);
+        if (null==user){
+            response.getWriter().write("1");
+        }else {
+            response.getWriter().write("2");
+        }
+    }
+
+/**
+ * 验证企业名称
+ * */
+    @RequestMapping("/checkCompanyname")
+    public void checkCompanyname(String companyname,HttpServletResponse response)throws  Exception{
+
+        Company company=userService.findCompanyByCompanyname(companyname);
+        if (null==company){
+            response.getWriter().write("1");
+        }else {
+            response.getWriter().write("2");
+        }
+    }
+
+
+    /**
+     * 省市县三级联动
+     * */
+    @RequestMapping("/getCity")
+    public @ResponseBody List<City> getCity(Integer parentId){
+        parentId=parentId==null?SysConstant.CITY_CHINA_ID:parentId;
+        List<City> cityList=cityService.findCitiesByParentId(parentId);
+        return cityList;
+    }
+
+    /**
+     * 注册功能
+     * */
+    @RequestMapping("/register")
+    public String register(RegisterVo vo){
+        userService.addRegister(vo);
+        return  "redirect:toLogin";
+    }
+
+    @RequestMapping("/toView")
+    public  String view(){
+        return "login/sms";
+    }
+
+    @RequestMapping("/smsControllter")
+    public void smsControllter(String phone) {
+
+        DefaultProfile profile = DefaultProfile.getProfile("default", "LTAIzHHwD1lkUDsX", "sSaindqb4UK3eEZBJoao6CHUiMzO1S");
+        IAcsClient client = new DefaultAcsClient(profile);
+        String code=new Random().nextInt(899999)+100000+"";
+        CommonRequest request = new CommonRequest();
+        request.setMethod(MethodType.POST);
+        request.setDomain("dysmsapi.aliyuncs.com");
+        request.setVersion("2017-05-25");
+        request.setAction("SendSms");
+        request.putQueryParameter("RegionId", "default");
+        request.putQueryParameter("PhoneNumbers", phone);
+        request.putQueryParameter("SignName", "\u4fee\u914d\u8fde");
+        request.putQueryParameter("TemplateCode", "SMS_172884079");
+        request.putQueryParameter("TemplateParam", "{\"code\":\""+code+"\"}");
+        try {
+            CommonResponse response = client.getCommonResponse(request);
+            System.out.println(response.getData());
+
+            jedis.boundValueOps(phone).set(code);
+
+            jedis.expire(phone,2, TimeUnit.MINUTES);
+        } catch (ServerException e) {
+            e.printStackTrace();
+        } catch (ClientException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @RequestMapping("/smsQuery")
+    public void  smsQuery(String code,String phone,HttpServletResponse response) throws  Exception{
+
+        String code1=(String) jedis.boundValueOps(phone).get();
+
+        if (code==null||!code.equals(code1)){
+            response.getWriter().write("3");
+        }else if (code.equals(code1)){
+            response.getWriter().write("2");
+        }else if(code1==null){
+            response.getWriter().write("1");
+        }
+
+    }
+
+    @RequestMapping("/test")
+    public void test(Integer id){
+        cityService.deleteCityById(id);
     }
 
 }

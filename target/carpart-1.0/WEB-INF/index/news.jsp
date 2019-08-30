@@ -56,9 +56,9 @@ function goToNewsList() {
 			<!--中间内容-->
 			<ul class="tab_menu pagebody3_all">
 				<li onclick="goToDynamicmessageList()" style="cursor:pointer">动态消息</li>
-				<li class="current" onclick="goToPublicmessageList()"
+				<li onclick="goToPublicmessageList()"
 					style="cursor:pointer">公告</li>
-				<li onclick="goToNewsList()" style="cursor:pointer">新闻</li>
+				<li  class="current" onclick="goToNewsList()" style="cursor:pointer">新闻</li>
 			</ul>
 			<div class="clear"></div>
 			<div class="tab_box ">
@@ -86,10 +86,10 @@ function goToNewsList() {
 					    <c:forEach begin="1" end="${page.pages}" var="pageNo">
 					    <c:choose>
 					    <c:when test="${pageNo==page.pageNum}">
-					    <a href="${ctx}/index/notice?pageNum=${pageNo}" style="background: #C30D23 none repeat scroll 0% 0%;color:#ffffff;">${pageNo}</a>
+					    <a href="${ctx}/index/news?pageNum=${pageNo}" style="background: #C30D23 none repeat scroll 0% 0%;color:#ffffff;">${pageNo}</a>
 					     </c:when>
 					   <c:otherwise>
-					   <a href="${ctx}/index/notice?pageNum=${pageNo}" >${pageNo}</a>
+					   <a href="${ctx}/index/news?pageNum=${pageNo}" >${pageNo}</a>
 					   </c:otherwise>
 					   </c:choose>
 						

@@ -25,6 +25,11 @@
 		<property name="suffix" value=".jsp"></property>
 	</bean>
 
+    <!-- 配置文件上传解析器 -->
+    <bean id="multipartResolver"
+          class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+
+    </bean>
 
     <mvc:interceptors>
         <mvc:interceptor>

@@ -43,6 +43,7 @@
       #{remark,jdbcType=VARCHAR})
   </insert>
   <insert id="insertSelective" parameterType="com.xiupeilian.carpart.model.SysUser" >
+
     insert into sys_user
     <trim prefix="(" suffix=")" suffixOverrides="," >
       <if test="id != null" >
@@ -194,5 +195,35 @@
   <select id="findUserByLoginNameAndEmail" parameterType="loginVo" resultMap="BaseResultMap">
     select * from sys_user where login_name=#{loginName} and email=#{email}
 
+  </select>
+  <select id="findUsers" parameterType="loginVo" resultMap="BaseResultMap">
+
+    select * from sys_user
+    <where>
+    1=1
+      <if test="username!=null and username!=''">
+
+        and username like '%${username}%'
+      </if>
+      <if test="companyId!=null and companyId!=''">
+
+        and company_id =#{companyId}
+      </if>
+    </where>
+  </select>
+
+  <select id="findUserByLoginName" parameterType="string" resultMap="BaseResultMap">
+
+    select * from sys_user where login_name=#{value}
+  </select>
+
+  <select id="findUserByPhone" parameterType="string" resultMap="BaseResultMap">
+
+    select * from sys_user where phone=#{value}
+  </select>
+
+  <select id="findUserByEmail" parameterType="string" resultMap="BaseResultMap">
+
+    select * from sys_user where email=#{value}
   </select>
 </mapper>

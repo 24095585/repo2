@@ -5,6 +5,8 @@ public class LoginVo {
     private String password;
     private String validate;
     private String email;
+    private String username;
+    private Integer companyId;
 
     public String getLoginName() {
         return loginName;
@@ -36,5 +38,21 @@ public class LoginVo {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public Integer getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(Integer companyId) {
+        this.companyId = companyId;
     }
 }
